@@ -146,7 +146,8 @@ void mc1d::saveVecVecToXML(const std::string &filename,const std::vector<std::ve
 /// @param lag decorrelation length
 /// @param loopTotal total mc steps
 /// @param equilibrium whether equilibrium has reached
-void mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, bool &same){
+/// @return last position
+std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, bool &same){
     std::random_device rd;
     std::ranlux24_base e2(rd());
     std::uniform_real_distribution<> distUnif01(0, 1);//[0,1)
@@ -209,7 +210,7 @@ void mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, bool &same){
     int fls = 0;
     bool active = true;
     const auto tMCStart{std::chrono::steady_clock::now()};
-
+     std::vector<double> last_x;
 
     while(fls<this->flushMaxNum and active==true){
         std::vector<std::vector<double>>xAllPerFlush;
@@ -287,6 +288,7 @@ void mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, bool &same){
                     std::regex_search(resultU, matchFileNum, fileNumRegex);
                     std::string fileNumStr = matchFileNum.str(1);
                     this->lastFileNum = std::stoi(fileNumStr);
+                    last_x=xAllPerFlush[xAllPerFlush.size()-1];
 
 
                 }
@@ -304,6 +306,7 @@ void mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, bool &same){
                     std::string fileNumStr = matchFileNum.str(1);
                     this->lastFileNum = std::stoi(fileNumStr);
                     active = false;
+                    last_x=xAllPerFlush[xAllPerFlush.size()-1];
                 }
 
 
@@ -337,6 +340,8 @@ void mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, bool &same){
     outSummary << "lag=" << lag << std::endl;
     outSummary.close();
 
+    return last_x;
+
 
 
 }//end of function
@@ -346,7 +351,8 @@ void mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, bool &same){
 ///
 /// @param lag decorrelation length
 /// @param loopEq total loop numbers in reaching equilibrium
-void mc1d::executionMCAfterEq(const int& lag,const int & loopEq){
+///@param x_init x from readEqMc
+void mc1d::executionMCAfterEq(const int& lag,const int & loopEq, const std::vector<double>& x_init){
     int counter=0;
     int remainingDataNum = this->dataNumTotal-lastFileNum*moveNumInOneFlush;
 
@@ -363,5 +369,75 @@ void mc1d::executionMCAfterEq(const int& lag,const int & loopEq){
     std::ranlux24_base e2(rd());
     std::uniform_real_distribution<> distUnif01(0, 1);//[0,1)
 
+    arma::dcolvec xCurr(x_init);
+    double UCurr=this->U(xCurr);
 
-}
+    //output directory
+    std::ostringstream sObjT;
+    sObjT << std::fixed;
+    sObjT << std::setprecision(10);
+    sObjT << T;
+    std::string TStr = sObjT.str();
+
+    std::ostringstream sObj_a;
+    sObj_a<<std::fixed;
+    sObj_a<<std::setprecision(10);;
+    sObj_a<<a;
+    std::string aStr=sObj_a.str();
+
+    std::string outDir="./data/a"+aStr+"/T"+TStr+"/";
+
+    std::string outUAllSubDir=outDir+"UAll/";
+    std::string out_xAllSubDir=outDir+"xAll/";
+
+    const auto tMCStart{std::chrono::steady_clock::now()};
+
+    std::cout<<"remaining flush number: "<<remainingFlushNum<<std::endl;
+
+    for (int fls = 0; fls < remainingFlushNum; fls++) {
+
+        std::vector<std::vector<double>>xAllPerFlush;
+        std::vector<double> UAllPerFlush;
+        int loopStart =loopEq+fls*moveNumInOneFlush;
+        for(int i=0;i<moveNumInOneFlush;i++){
+            //propose a move
+            arma::dcolvec xNext= proposal(xCurr);
+            double r= acceptanceRatio(xCurr,xNext);
+            double u = distUnif01(e2);
+            counter++;
+            if(u<=r){
+                xCurr=xNext;
+                UCurr= U(xCurr);
+            }//end if
+            xAllPerFlush.push_back(arma::conv_to<std::vector<double>>::from(xCurr));
+            UAllPerFlush.push_back(UCurr);
+
+
+        }//end for loop
+
+        int loopEnd = loopStart +moveNumInOneFlush-1;
+        std::string filenameMiddle = "loopStart" + std::to_string(loopStart) +
+                                     "loopEnd" + std::to_string(loopEnd) + "T" + TStr;
+        std::string outUFileName=outUAllSubDir+filenameMiddle+".UAll.xml";
+        this->saveVecToXML(outUFileName,UAllPerFlush);
+
+        std::string outxFileName=out_xAllSubDir+filenameMiddle+".xAll.xml";
+        this->saveVecVecToXML(outxFileName,xAllPerFlush);
+        const auto tflushEnd{std::chrono::steady_clock::now()};
+        const std::chrono::duration<double> elapsed_seconds{tflushEnd - tMCStart};
+        std::cout << "flush " << fls << std::endl;
+        std::cout << "time elapsed: " << elapsed_seconds.count() / 3600.0 << " h" << std::endl;
+
+
+    }//end of flush loop
+
+    std::ofstream outSummary(outDir + "summaryAfterEq.txt");
+    int loopTotal=counter;
+    const auto tMCEnd{std::chrono::steady_clock::now()};
+    const std::chrono::duration<double> elapsed_secondsAll{tMCEnd - tMCStart};
+    outSummary << "total mc time: " << elapsed_secondsAll.count() / 3600.0 << " h" << std::endl;
+    outSummary << "total loop number: " << loopTotal << std::endl;
+
+
+
+}//end of mc

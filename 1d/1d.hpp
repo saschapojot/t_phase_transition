@@ -93,7 +93,8 @@ public:
     /// @param lag decorrelation length
     /// @param loopTotal total mc steps
     /// @param equilibrium whether equilibrium has reached
-    void readEqMc(int& lag,int &loopTotal,bool &equilibrium, bool &same);
+    /// @return last position
+    std::vector<double> readEqMc(int& lag,int &loopTotal,bool &equilibrium, bool &same);
 
 
     ///
@@ -104,7 +105,8 @@ public:
     ///
     /// @param lag decorrelation length
     /// @param loopEq total loop numbers in reaching equilibrium
-    void executionMCAfterEq(const int& lag,const int & loopEq);// mc simulation without inquiring equilibrium after reaching equilibrium
+    ///@param x_init x from readEqMc
+    void executionMCAfterEq(const int& lag,const int & loopEq, const std::vector<double>& x_init);// mc simulation without inquiring equilibrium after reaching equilibrium
 
 
 public:

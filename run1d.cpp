@@ -5,16 +5,25 @@
 #include "/home/polya/Documents/cppCode/t_phase_transition/1d/1d.hpp"
 
 int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        std::cout << "wrong arguments" << std::endl;
+        std::exit(2);
+    }
+    double T = std::stod(argv[1]);
+    double a = std::stod(argv[2]);
+    double stepSize = 0.01;
+    bool diag = true;
+    int dataNum = 10000;
+    auto mc1dObj = mc1d(T, stepSize, a, diag, dataNum);
+    int lag=-1;
+    int totalLoopEq=0;
+    bool eq=false;
+    bool same= false;
 
-mc1d obj1d(3,0.01,4,true,10);
-    int lag=0;
-    int loopTotal=0;
-    bool equilibrium;
+   std::vector<double>last_x= mc1dObj.readEqMc(lag,totalLoopEq,eq,same);
+    if(!same and lag>0){
+        mc1dObj.executionMCAfterEq(lag,totalLoopEq,last_x);
+    }
 
-arma::dcolvec x{1,2,3};
-std::vector<double> y=arma::conv_to<std::vector<double>>::from(x);
-for(const auto&val: y){
-    std::cout<<val<<",";
-}
-std::cout<<std::endl;
+    return 0;
 }
