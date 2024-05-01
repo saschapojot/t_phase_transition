@@ -25,16 +25,17 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <vector>
 
-
+namespace fs = boost::filesystem;
 //this subroutine computes the mc evolution for a 1d system
 class mc1d {
-public:mc1d(double temperature,double stepSize,double aVal,bool diagVal,int pntNum){
+public:mc1d(double temperature,double stepSize,double aVal,bool isDiag,int pntNum){
         this->T=temperature;
         this->beta=1/T;
         this->h=stepSize;
         this->a=aVal;
-        this->diag=diagVal;
+        this->diag=isDiag;
         this->N=pntNum;
         this->eqPositions=arma::dcolvec (N);
         for(int i=0;i<N;i++){
@@ -54,6 +55,16 @@ public:
     /// @param x position
     /// @return gradient of U with respect to x
     arma::dcolvec gradU(const arma::dcolvec& x);
+
+    ///
+    /// @param x position
+    /// @return beta*U
+    double f(const arma::dcolvec& x);
+
+    ///
+    /// @param x position
+    /// @return beta * grad U
+    arma::dcolvec gradf(const arma::dcolvec& x);
 
     ///
     /// @param x x position
@@ -82,7 +93,18 @@ public:
     /// @param lag decorrelation length
     /// @param loopTotal total mc steps
     /// @param equilibrium whether equilibrium has reached
-    void readEqMc(int& lag,int &loopTotal,bool &equilibrium);
+    void readEqMc(int& lag,int &loopTotal,bool &equilibrium, bool &same);
+
+
+    ///
+    /// @param filename  xml file name of vecvec
+    /// @param vecvec vector<vector> to be saved
+    static void saveVecVecToXML(const std::string &filename,const std::vector<std::vector<double>> &vecvec);
+
+    ///
+    /// @param lag decorrelation length
+    /// @param loopEq total loop numbers in reaching equilibrium
+    void executionMCAfterEq(const int& lag,const int & loopEq);// mc simulation without inquiring equilibrium after reaching equilibrium
 
 
 public:
@@ -96,6 +118,7 @@ public:
     bool diag=true;// whether the quadratic form of energy is diagonal
     int N=10;//number of points
     arma::dcolvec  eqPositions;// equilibrium positions
+    double lastFileNum=0;
 };
 
 

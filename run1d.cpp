@@ -7,6 +7,14 @@
 int main(int argc, char *argv[]) {
 
 mc1d obj1d(3,0.01,4,true,10);
-arma::dcolvec x{9,8,7,6,5,4,3,2,1,0};
-std::cout<<obj1d.proposal(x)<<std::endl;
+    int lag=0;
+    int loopTotal=0;
+    bool equilibrium;
+
+arma::dcolvec x{1,2,3};
+std::vector<double> y=arma::conv_to<std::vector<double>>::from(x);
+for(const auto&val: y){
+    std::cout<<val<<",";
+}
+std::cout<<std::endl;
 }
