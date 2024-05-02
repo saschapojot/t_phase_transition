@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     double a = std::stod(argv[2]);
     double stepSize = 0.01;
     bool diag = true;
-    int dataNum = 10000;
+    int dataNum = 10;
     auto mc1dObj = mc1d(T, stepSize, a, diag, dataNum);
     int lag=-1;
     int totalLoopEq=0;

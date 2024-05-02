@@ -302,6 +302,7 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
                     std::string lagStrU = matchULag.str(1);
                     int lagU = std::stoi(lagStrU);
                     std::cout << "lag=" << lagU << std::endl;
+                    lag=lagU;
                     std::regex_search(resultU, matchFileNum, fileNumRegex);
                     std::string fileNumStr = matchFileNum.str(1);
                     this->lastFileNum = std::stoi(fileNumStr);
