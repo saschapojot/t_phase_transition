@@ -2,7 +2,7 @@
 // Created by polya on 4/30/24.
 //
 
-#include "/home/polya/Documents/cppCode/t_phase_transition/1d/1d.hpp"
+#include "./1d/1d.hpp"
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
