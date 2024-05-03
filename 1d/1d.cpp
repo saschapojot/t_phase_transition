@@ -355,7 +355,7 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
 ///@param x_init x from readEqMc
 void mc1d::executionMCAfterEq(const int& lag,const int & loopEq, const std::vector<double>& x_init){
     int counter=0;
-    int remainingDataNum = this->dataNumTotal-lastFileNum*moveNumInOneFlush;
+    int remainingDataNum = this->dataNumTotal-static_cast<int>(std::floor(lastFileNum*moveNumInOneFlush/lag));
 
     int remainingLoopNum = remainingDataNum * lag;
     if (remainingLoopNum <= 0) {
