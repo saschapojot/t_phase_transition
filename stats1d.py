@@ -279,6 +279,7 @@ def diagnosticsAndStats(oneTFile):
 
         meanU=np.mean(USelected)
         varU=np.var(USelected,ddof=1)
+        sigmaU=np.sqrt(varU)
         # print("varU="+str(varU))
         hfIntervalU=1.96*np.sqrt(varU/len(USelected))
 
@@ -292,20 +293,20 @@ def diagnosticsAndStats(oneTFile):
         axU=fig.add_subplot()
         (n0,_,_)=axU.hist(USelected,bins=nbins)
         meanU=np.round(meanU,4)
-        hfIntervalU=np.round(hfIntervalU,4)
+        sigmaU=np.round(sigmaU,4)
         axU.set_title("T="+str(np.round(TTmp,3)))
         axU.set_xlabel("$U$")
         axU.set_ylabel("#")
         xPosUText=(np.max(USelected)-np.min(USelected))*1/2+np.min(USelected)
         yPosUText=np.max(n0)*2/3
-        axU.text(xPosUText,yPosUText,"mean="+str(meanU)+"\nhalfLength="+str(hfIntervalU)+"\nlag="+str(lag))
+        axU.text(xPosUText,yPosUText,"mean="+str(meanU)+"\nsd="+str(sigmaU)+"\nlag="+str(lag))
         plt.axvline(x=meanU,color="red",label="mean")
-        axU.text(meanU*1.1,0.5*np.max(n0),str(meanU)+"$\pm$"+str(hfIntervalU),color="red")
-        axU.hlines(y=0,xmin=meanU-hfIntervalU,xmax=meanU+hfIntervalU,color="green",linewidth=15)
+        axU.text(meanU*1.1,0.5*np.max(n0),str(meanU)+"$\pm$"+str(sigmaU),color="red")
+        axU.hlines(y=0,xmin=meanU-sigmaU,xmax=meanU+sigmaU,color="green",linewidth=15)
 
         plt.legend(loc="best")
 
-        EHistOut="T"+str(TTmp)+"EHist.png"
+        EHistOut="T"+str(TTmp)+"UHist.png"
         plt.savefig(oneTFile+"/"+EHistOut)
 
         plt.close()
@@ -361,16 +362,17 @@ def diagnosticsAndStats(oneTFile):
         xValsTmp=xValsForEachPosition[j]
         xMeanTmp=np.mean(xValsTmp)
         xVarTmp=np.var(xValsTmp,ddof=1)
+        xSigmaTmp=np.sqrt(xVarTmp)
         xHfInterval=1.96*np.sqrt(xVarTmp/len(xValsTmp))
         nbins=500
         (n,_,_)=axx.hist(xValsTmp,bins=nbins)
         xMeanTmp=np.round(xMeanTmp,4)
-        xHfInterval=np.round(xHfInterval,4)
+        xSigmaTmp=np.round(xSigmaTmp,4)
         hPosText=(np.max(xValsTmp)-np.min(xVarTmp))*1/7+np.min(xValsTmp)
         vPosText=np.max(n)*3/4
         axx.set_title("position "+str(j)+", T="+str(np.round(TTmp,3)))
         plt.axvline(x=xMeanTmp,color="red",label="mean")
-        axx.text(xMeanTmp*1.1,0.5*np.max(n),str(xMeanTmp)+"$\pm$"+str(xHfInterval),color="red")
+        axx.text(xMeanTmp*1.1,0.5*np.max(n),str(xMeanTmp)+"$\pm$"+str(xSigmaTmp),color="red")
         # axx.hlines(y=0,xmin=xMeanTmp-xHfInterval,xmax=xMeanTmp+xHfInterval,color="green",linewidth=15)
         plt.legend(loc="best")
         axx.set_xticks(xTicks)
