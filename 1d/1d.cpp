@@ -173,6 +173,7 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
     std::string TStr = sObjT.str();
 
 
+
     std::string  funcName= demangle(typeid(*potFuncPtr).name());
 
 //    std::ostringstream sObj_a;
@@ -182,6 +183,7 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
 //    std::string aStr=sObj_a.str();
 
     std::string outDir="./data/func"+funcName+"/T"+TStr+"/";
+
 
     std::string outUAllSubDir=outDir+"UAll/";
     std::string out_xAllSubDir=outDir+"xAll/";
@@ -358,7 +360,7 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
 ///@param x_init x from readEqMc
 void mc1d::executionMCAfterEq(const int& lag,const int & loopEq, const std::vector<double>& x_init){
     int counter=0;
-    int remainingDataNum = this->dataNumTotal-lastFileNum*moveNumInOneFlush;
+    int remainingDataNum = this->dataNumTotal-static_cast<int>(std::floor(lastFileNum*moveNumInOneFlush/lag));
 
     int remainingLoopNum = remainingDataNum * lag;
     if (remainingLoopNum <= 0) {
@@ -385,11 +387,13 @@ void mc1d::executionMCAfterEq(const int& lag,const int & loopEq, const std::vect
 
 
 
+
     std::string  funcName= demangle(typeid(*potFuncPtr).name());
 
 
 
     std::string outDir="./data/func"+funcName+"/T"+TStr+"/";
+
 
     std::string outUAllSubDir=outDir+"UAll/";
     std::string out_xAllSubDir=outDir+"xAll/";
