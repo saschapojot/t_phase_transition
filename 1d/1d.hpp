@@ -96,7 +96,7 @@ public:
         std::seed_seq seq{17, 19, 23};  // Fixed sequence for reproducibility
         std::ranlux24_base gen;
         gen.seed(seq);
-        std::uniform_real_distribution<> distr(-100, 100);
+        std::uniform_real_distribution<> distr(-1, 1);
         for (int i = 0; i < pntNum; i++) {
             for (int j = 0; j < pntNum; j++) {
                 A(i, j) = distr(gen);
@@ -111,6 +111,7 @@ public:
         diag = arma::diagmat(arma::conv_to<arma::colvec>::from(diagElems));
 //        std::cout<<diag<<std::endl;
         pdmat = A.t() * diag * A;
+        std::cout<<"det="<<arma::det(A)<<std::endl;
 
 
     }//end of constructor
