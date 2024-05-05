@@ -182,7 +182,7 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
 //    sObj_a<<a;
 //    std::string aStr=sObj_a.str();
 
-    std::string outDir="./data/func"+funcName+"/T"+TStr+"/";
+    std::string outDir="./1ddata/func"+funcName+"/T"+TStr+"/";
 
 
     std::string outUAllSubDir=outDir+"UAll/";
@@ -392,7 +392,7 @@ void mc1d::executionMCAfterEq(const int& lag,const int & loopEq, const std::vect
 
 
 
-    std::string outDir="./data/func"+funcName+"/T"+TStr+"/";
+    std::string outDir="./1ddata/func"+funcName+"/T"+TStr+"/";
 
 
     std::string outUAllSubDir=outDir+"UAll/";
