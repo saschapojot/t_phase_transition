@@ -18,6 +18,8 @@
 #include <cmath>
 #include <chrono>
 #include <cstdlib>
+#include <cxxabi.h>
+
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -25,17 +27,147 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <typeinfo>
 #include <vector>
 
 namespace fs = boost::filesystem;
 //this subroutine computes the mc evolution for a 1d system
+
+class potentialFunction{
+public:
+    virtual double operator() (const arma::dcolvec& x, const arma::dcolvec & eqPositions)const=0;
+    virtual arma::dcolvec grad(const arma::dcolvec& x, const arma::dcolvec & eqPositions) const=0;
+    virtual ~ potentialFunction(){};
+public:
+    double a=5.3;//stiffness
+};
+
+class quadraticDiag: public  potentialFunction{
+    ///
+    /// @param x position
+    /// @param eqPositions centers
+    /// @param a coefficient
+    /// @return
+    double operator()(const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
+        arma::dcolvec diff=x-eqPositions;
+        double norm2Tmp=arma::norm(diff,2);
+        return a*std::pow(norm2Tmp,2);
+    }
+    arma::dcolvec grad(const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
+
+        arma::dcolvec diff=x-eqPositions;
+        return 2*a*diff;
+    }
+
+
+};
+
+class quarticCubicDiag:public potentialFunction{
+    double operator() (const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
+
+        arma::dcolvec diff=x-eqPositions;
+
+        double val=0;
+        int len=x.size();
+        for (int k=0;k<len;k++){
+
+            val+=10*std::pow(diff(k),4)+std::pow(diff(k),3);
+        }
+
+        return a*val;
+
+
+    }
+    arma::dcolvec grad(const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
+        arma::dcolvec diff=x-eqPositions;
+        arma::dcolvec gradVec(x.size());
+        for(int k=0;k<x.size();k++){
+            gradVec(k)=40*std::pow(diff(k),3)+3*std::pow(diff(k),2);
+        }
+        return a*gradVec;
+    }
+};
+
+class pdQuadratic: public potentialFunction{
+public:
+    pdQuadratic(const int &pntNum) {
+        //initialize A matrix
+        A = arma::dmat(pntNum, pntNum);
+        std::seed_seq seq{17, 19, 23};  // Fixed sequence for reproducibility
+        std::ranlux24_base gen;
+        gen.seed(seq);
+        std::uniform_real_distribution<> distr(-100, 100);
+        for (int i = 0; i < pntNum; i++) {
+            for (int j = 0; j < pntNum; j++) {
+                A(i, j) = distr(gen);
+            }
+        }
+        //initialize diagonal matrix
+        std::vector<double> diagElems;
+        for (int j = 0; j < pntNum; j++) {
+            diagElems.push_back(static_cast<double>(j + 1));
+        }
+        //compute pd matrix
+        diag = arma::diagmat(arma::conv_to<arma::colvec>::from(diagElems));
+//        std::cout<<diag<<std::endl;
+        pdmat = A.t() * diag * A;
+
+
+    }//end of constructor
+
+    double operator() (const arma::dcolvec& x, const arma::dcolvec & eqPositions) const override{
+
+    arma::dcolvec diff=x-eqPositions;
+    double val=arma::dot(diff,0.5*pdmat*diff);
+        return val;
+    }
+
+    arma::dcolvec grad(const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
+
+        arma::dcolvec diff=x-eqPositions;
+        return pdmat*diff;
+    }
+
+
+    arma::dmat A;
+    arma::dmat diag;
+    arma::dmat pdmat;
+
+};
+
+
+class quadraticCubicQudraticDiag: public potentialFunction{
+    double operator() (const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
+        arma::dcolvec diff=x-eqPositions;
+        double val=0;
+        for(int k=0;k<x.size();k++){
+            double diffk=diff(k);
+            val+=10*std::pow(diffk,4)+std::pow(diffk,3)+3.5*std::pow(diffk,2);
+        }
+        return a*val;
+    }
+
+    arma::dcolvec grad(const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
+        arma::dcolvec diff=x-eqPositions;
+        arma::dcolvec gradVec(x.size());
+        for(int k=0;k<x.size();k++){
+            double diffk=diff(k);
+            gradVec(k)=40*std::pow(diffk,3)+3*std::pow(diffk,2)+7*diffk;
+        }
+        return a*gradVec;
+
+    }
+
+};
+
 class mc1d {
-public:mc1d(double temperature,double stepSize,double aVal,bool isDiag,int pntNum){
+public:mc1d(double temperature,double stepSize,int pntNum, const std::shared_ptr<potentialFunction>& funcPtr ){
         this->T=temperature;
         this->beta=1/T;
         this->h=stepSize;
-        this->a=aVal;
-        this->diag=isDiag;
+        this->potFuncPtr=funcPtr;
+
+//        this->diag=isDiag;
         this->N=pntNum;
         this->eqPositions=arma::dcolvec (N);
         for(int i=0;i<N;i++){
@@ -49,12 +181,12 @@ public:
     ///
     /// @param x position
     /// @return total potential
-    double U(const arma::dcolvec& x);
+//    double U(const arma::dcolvec& x);
 
     ///
     /// @param x position
     /// @return gradient of U with respect to x
-    arma::dcolvec gradU(const arma::dcolvec& x);
+//    arma::dcolvec gradU(const arma::dcolvec& x);
 
     ///
     /// @param x position
@@ -109,6 +241,17 @@ public:
     void executionMCAfterEq(const int& lag,const int & loopEq, const std::vector<double>& x_init);// mc simulation without inquiring equilibrium after reaching equilibrium
 
 
+    std::string demangle(const char* name) {
+        int status = -1;
+        char* demangled = abi::__cxa_demangle(name, NULL, NULL, &status);
+        std::string result(name);
+        if (status == 0) {
+            result = demangled;
+        }
+        std::free(demangled);
+        return result;
+    }
+
 public:
     double T;// temperature
     double beta;
@@ -116,11 +259,13 @@ public:
     int flushMaxNum=700;
     int dataNumTotal=8000;
     double h;// step size
-    double a=5.3;//stiffness
-    bool diag=true;// whether the quadratic form of energy is diagonal
+//    double a=5.3;//stiffness
+//    bool diag=true;// whether the quadratic form of energy is diagonal
     int N=10;//number of points
     arma::dcolvec  eqPositions;// equilibrium positions
     double lastFileNum=0;
+    std::shared_ptr<potentialFunction> potFuncPtr;
+
 };
 
 

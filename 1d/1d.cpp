@@ -6,20 +6,20 @@
 ///
 /// @param x position
 /// @return total potential
-double mc1d::U(const arma::dcolvec& x){
-
-    arma::dcolvec diff=x-this->eqPositions;
-    double norm2Tmp=arma::norm(diff,2);
-    return this->a*std::pow(norm2Tmp,2);
-
-}
+//double mc1d::U(const arma::dcolvec& x){
+//
+//    arma::dcolvec diff=x-this->eqPositions;
+//    double norm2Tmp=arma::norm(diff,2);
+//    return this->a*std::pow(norm2Tmp,2);
+//
+//}
 
 ///
 /// @param x position
 /// @return beta*U
 double mc1d::f(const arma::dcolvec& x){
 
-    return this->beta* this->U(x);
+    return this->beta* ((*potFuncPtr)(x,eqPositions));
 }
 
 
@@ -27,22 +27,22 @@ double mc1d::f(const arma::dcolvec& x){
 ///
 /// @param x position
 /// @return gradient of U with respect to x
-arma::dcolvec mc1d::gradU(const arma::dcolvec& x){
-    arma::dcolvec  grad(N);
-    for(int j=0;j<N;j++){
-        grad(j)=2*a*(x(j)-static_cast<double >(j));
-    }
-
-    return grad;
-
-
-}
+//arma::dcolvec mc1d::gradU(const arma::dcolvec& x){
+//    arma::dcolvec  grad(N);
+//    for(int j=0;j<N;j++){
+//        grad(j)=2*a*(x(j)-static_cast<double >(j));
+//    }
+//
+//    return grad;
+//
+//
+//}
 
 ///
 /// @param x position
 /// @return beta * grad U
 arma::dcolvec mc1d::gradf(const arma::dcolvec& x){
-    return this->beta*this->gradU(x);
+    return this->beta* potFuncPtr->grad(x,eqPositions);
 }
 
 
@@ -164,7 +164,7 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
     }
 
     //initial value of energy
-    double UCurr=this->U(xCurr);
+    double UCurr=(*potFuncPtr)(xCurr,eqPositions);
     //output directory
     std::ostringstream sObjT;
     sObjT << std::fixed;
@@ -172,13 +172,16 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
     sObjT << T;
     std::string TStr = sObjT.str();
 
-    std::ostringstream sObj_a;
-    sObj_a<<std::fixed;
-    sObj_a<<std::setprecision(10);;
-    sObj_a<<a;
-    std::string aStr=sObj_a.str();
 
-    std::string outDir="./data/a"+aStr+"/T"+TStr+"/";
+    std::string  funcName= demangle(typeid(*potFuncPtr).name());
+
+//    std::ostringstream sObj_a;
+//    sObj_a<<std::fixed;
+//    sObj_a<<std::setprecision(10);;
+//    sObj_a<<a;
+//    std::string aStr=sObj_a.str();
+
+    std::string outDir="./data/func"+funcName+"/T"+TStr+"/";
 
     std::string outUAllSubDir=outDir+"UAll/";
     std::string out_xAllSubDir=outDir+"xAll/";
@@ -226,7 +229,7 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
             counter++;
             if(u<=r){
                 xCurr=xNext;
-                UCurr= U(xCurr);
+                UCurr= (*potFuncPtr)(xCurr,eqPositions);
             }//end if
 
             xAllPerFlush.push_back(arma::conv_to<std::vector<double>>::from(xCurr));
@@ -371,7 +374,7 @@ void mc1d::executionMCAfterEq(const int& lag,const int & loopEq, const std::vect
     std::uniform_real_distribution<> distUnif01(0, 1);//[0,1)
 
     arma::dcolvec xCurr(x_init);
-    double UCurr=this->U(xCurr);
+    double UCurr=(*potFuncPtr)(xCurr,eqPositions);
 
     //output directory
     std::ostringstream sObjT;
@@ -380,13 +383,13 @@ void mc1d::executionMCAfterEq(const int& lag,const int & loopEq, const std::vect
     sObjT << T;
     std::string TStr = sObjT.str();
 
-    std::ostringstream sObj_a;
-    sObj_a<<std::fixed;
-    sObj_a<<std::setprecision(10);;
-    sObj_a<<a;
-    std::string aStr=sObj_a.str();
 
-    std::string outDir="./data/a"+aStr+"/T"+TStr+"/";
+
+    std::string  funcName= demangle(typeid(*potFuncPtr).name());
+
+
+
+    std::string outDir="./data/func"+funcName+"/T"+TStr+"/";
 
     std::string outUAllSubDir=outDir+"UAll/";
     std::string out_xAllSubDir=outDir+"xAll/";
@@ -408,7 +411,7 @@ void mc1d::executionMCAfterEq(const int& lag,const int & loopEq, const std::vect
             counter++;
             if(u<=r){
                 xCurr=xNext;
-                UCurr= U(xCurr);
+                UCurr= (*potFuncPtr)(xCurr,eqPositions);
             }//end if
             xAllPerFlush.push_back(arma::conv_to<std::vector<double>>::from(xCurr));
             UAllPerFlush.push_back(UCurr);
