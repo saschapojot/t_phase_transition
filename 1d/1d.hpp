@@ -102,6 +102,9 @@ public:
                 A(i, j) = distr(gen);
             }
         }
+        //A to orthogonal
+        arma::dmat B=arma::orth(A);
+//        std::cout<<"BTB="<<B.t()*B<<std::endl;
         //initialize diagonal matrix
         std::vector<double> diagElems;
         for (int j = 0; j < pntNum; j++) {
@@ -110,9 +113,9 @@ public:
         //compute pd matrix
         diag = arma::diagmat(arma::conv_to<arma::colvec>::from(diagElems));
 //        std::cout<<diag<<std::endl;
-        pdmat = A.t() * diag * A;
-        std::cout<<"det="<<arma::det(A)<<std::endl;
-
+        pdmat = B.t() * diag * B;
+//        std::cout<<"det(A)="<<arma::det(A)<<std::endl;
+        std::cout<<"det(pdmat)="<<arma::det(pdmat)<<std::endl;
 
     }//end of constructor
 
@@ -133,6 +136,7 @@ public:
     arma::dmat A;
     arma::dmat diag;
     arma::dmat pdmat;
+//    std::string prefix="ortho";
 
 };
 
