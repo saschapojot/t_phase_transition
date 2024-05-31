@@ -39,7 +39,7 @@ public:
     virtual arma::dcolvec grad(const arma::dcolvec& x, const arma::dcolvec & eqPositions) const=0;
     virtual ~ potentialFunction(){};
 public:
-    double a=5.3;//stiffness
+    double a=1;//stiffness
 };
 
 class quadraticDiag: public  potentialFunction{
