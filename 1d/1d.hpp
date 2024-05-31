@@ -62,6 +62,30 @@ class quadraticDiag: public  potentialFunction{
 
 };
 
+class cubicAbs:public potentialFunction{
+
+     double operator() (const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
+          arma::dcolvec diff=x-eqPositions;
+
+        double val=0;
+        int len=x.size();
+        for (int k=0;k<len;k++){
+            val+=std::pow(std::abs(diff(k)),3);
+        }
+        return a*val;
+     }
+
+      arma::dcolvec grad(const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
+        arma::dcolvec diff=x-eqPositions;
+        arma::dcolvec gradVec(x.size());
+        for(int k=0;k<x.size();k++){
+            gradVec(k)=3*std::pow(diff(k),2);
+        }
+        return a*gradVec;
+    }
+
+};
+
 class quarticCubicDiag:public potentialFunction{
     double operator() (const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
 

@@ -53,9 +53,9 @@ arma::dcolvec mc1d::proposal(const arma::dcolvec& x){
 
 
 
-    arma::dcolvec gradVec=this->gradf(x);
-    arma::dcolvec meanVec=x-h*gradVec;
-    double stddev=std::sqrt(2.0*h);
+//    arma::dcolvec gradVec=this->gradf(x);
+    arma::dcolvec meanVec=x;//-h*gradVec;
+    double stddev=h;
 
     std::random_device rd;
     std::ranlux24_base gen(rd());
