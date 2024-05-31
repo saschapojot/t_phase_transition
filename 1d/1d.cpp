@@ -54,8 +54,16 @@ arma::dcolvec mc1d::proposal(const arma::dcolvec& x){
 
 
 //    arma::dcolvec gradVec=this->gradf(x);
-    arma::dcolvec meanVec=x;//-h*gradVec;
-    double stddev=h;
+    arma::dcolvec meanVec;//=x;//-h*gradVec;
+    if(withGrad==1){
+        arma::dcolvec gradVec=this->gradf(x);
+        meanVec=x-h*gradVec;
+    }
+    else{
+        meanVec=x;
+    }
+
+    double stddev=std::sqrt(2.0*h);
 
     std::random_device rd;
     std::ranlux24_base gen(rd());
@@ -101,8 +109,8 @@ std::string mc1d::execPython(const char* cmd){
 /// @param z proposed position
 /// @return acceptance ratio
 double mc1d::acceptanceRatio(const arma::dcolvec& x,const arma::dcolvec& z){
-
-    arma::dcolvec gradf_z=this->gradf(z);
+    if (withGrad==1){
+        arma::dcolvec gradf_z=this->gradf(z);
     arma::dcolvec gradf_x=this->gradf(x);
 
 
@@ -115,6 +123,18 @@ double mc1d::acceptanceRatio(const arma::dcolvec& x,const arma::dcolvec& z){
     double ratio=std::exp(numerator-denominator);
 
     return std::min(1.0,ratio);
+
+    }
+    else{
+
+        double numerator=-f(z);
+        double denominator=-f(x);
+        double ratio=std::exp(numerator-denominator);
+
+    return std::min(1.0,ratio);
+
+    }
+
 
 
 
@@ -153,8 +173,8 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
     std::uniform_real_distribution<> distUnif01(0, 1);//[0,1)
 
     //generate initial values of positions
-    double leftEnd=-100.0;
-    double rightEnd=100.0;
+    double leftEnd=-2;
+    double rightEnd=12;
     std::uniform_real_distribution<> distUnifLeftRight(leftEnd,rightEnd);
 
 
@@ -342,7 +362,7 @@ std::vector<double>  mc1d::readEqMc(int& lag,int &loopTotal,bool &equilibrium, b
     outSummary << "lastFileNum=" << lastFileNum << std::endl;
     outSummary << "equilibrium reached: " << !active << std::endl;
     outSummary << "same: " << same << std::endl;
-
+    outSummary<<"with grad: "<<withGrad<<std::endl;
     outSummary << "lag=" << lag << std::endl;
     outSummary.close();
 

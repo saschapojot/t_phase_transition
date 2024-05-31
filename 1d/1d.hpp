@@ -62,7 +62,7 @@ class quadraticDiag: public  potentialFunction{
 
 };
 
-class cubicAbs:public potentialFunction{
+class quadraticCubicAbs:public potentialFunction{
 
      double operator() (const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
           arma::dcolvec diff=x-eqPositions;
@@ -70,7 +70,7 @@ class cubicAbs:public potentialFunction{
         double val=0;
         int len=x.size();
         for (int k=0;k<len;k++){
-            val+=std::pow(std::abs(diff(k)),3);
+            val+=std::pow(std::abs(diff(k)),3)+std::pow(diff(k),2);
         }
         return a*val;
      }
@@ -80,8 +80,9 @@ class cubicAbs:public potentialFunction{
         arma::dcolvec gradVec(x.size());
         for(int k=0;k<x.size();k++){
             gradVec(k)=3*std::pow(diff(k),2);
+
         }
-        return a*gradVec;
+        return a*gradVec*arma::sign(diff)+a*2*diff;
     }
 
 };
@@ -165,24 +166,24 @@ public:
 };
 
 
-class quadraticCubicQudraticDiag: public potentialFunction{
+class quarticCubicQudraticDiag: public potentialFunction{
     double operator() (const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
         arma::dcolvec diff=x-eqPositions;
-        double val=0;
-        for(int k=0;k<x.size();k++){
-            double diffk=diff(k);
-            val+=10*std::pow(diffk,4)+std::pow(diffk,3)+3.5*std::pow(diffk,2);
-        }
-        return a*val;
+//        double val=0;
+//        for(int k=0;k<x.size();k++){
+//            double diffk=diff(k);
+//            val+=10*std::pow(diffk,4)+std::pow(diffk,3)+3.5*std::pow(diffk,2);
+//        }
+//        return a*val;
+        arma::dcolvec vec=arma::pow(diff,2)+arma::pow(diff,3)+arma::pow(diff,4);
+        return a*arma::sum(vec);
+
     }
 
     arma::dcolvec grad(const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
         arma::dcolvec diff=x-eqPositions;
-        arma::dcolvec gradVec(x.size());
-        for(int k=0;k<x.size();k++){
-            double diffk=diff(k);
-            gradVec(k)=40*std::pow(diffk,3)+3*std::pow(diffk,2)+7*diffk;
-        }
+
+arma::dcolvec  gradVec=2*diff+3*arma::pow(diff,2)+4*arma::pow(diff,3);
         return a*gradVec;
 
     }
@@ -190,7 +191,7 @@ class quadraticCubicQudraticDiag: public potentialFunction{
 };
 
 class mc1d {
-public:mc1d(double temperature,double stepSize,int pntNum, const std::shared_ptr<potentialFunction>& funcPtr ){
+public:mc1d(double temperature,double stepSize,int pntNum, const std::shared_ptr<potentialFunction>& funcPtr,int withGrd ){
         this->T=temperature;
         this->beta=1/T;
         this->h=stepSize;
@@ -198,10 +199,12 @@ public:mc1d(double temperature,double stepSize,int pntNum, const std::shared_ptr
 
 //        this->diag=isDiag;
         this->N=pntNum;
+        this->withGrad=withGrd;
         this->eqPositions=arma::dcolvec (N);
         for(int i=0;i<N;i++){
             this->eqPositions(i)=static_cast<double >(i);
         }
+        std::cout<<"withGrad="<<this->withGrad<<std::endl;
 //        std::cout<<eqPositions<<std::endl;
 
     }
@@ -294,6 +297,7 @@ public:
     arma::dcolvec  eqPositions;// equilibrium positions
     double lastFileNum=0;
     std::shared_ptr<potentialFunction> potFuncPtr;
+    int withGrad=1;
 
 };
 
