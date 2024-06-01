@@ -6,10 +6,10 @@ import sys
 import re
 import matplotlib.pyplot as plt
 from datetime import datetime
-
+from scipy import stats
 import pandas as pd
 
-pathData="./1ddata/funcquadraticDiag/"
+pathData="./1ddata/noGrad/funcquadraticDiag/"
 TVals=[]
 TFileNames=[]
 
@@ -85,12 +85,13 @@ def plotG(j):
     plt.scatter(sortedTVals,colTmp,color="red")
     plt.xlabel("T")
     plt.ylabel("$G($"+str(j)+"$)$")
-    plt.ylim((-0.5,0.5))
+    # plt.ylim((-0.5,0.5))
 
 
     plt.savefig(pathData+"/GA"+str(j)+".pdf")
 
     plt.close()
+    return colTmp
 
 
 
@@ -116,5 +117,11 @@ def plotr(j):
 
 
 
-plotG(int(N/2))
-plotr(int(N/2))
+varVals=plotG(0)
+plotr(0)
+slope, intercept, r, p, std_err = stats.linregress(sortedTVals, varVals)
+
+print("slope="+str(slope))
+print("intercept="+str(intercept))
+
+print("p="+str(p))
