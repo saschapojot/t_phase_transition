@@ -8,7 +8,7 @@ import sys
 import re
 from copy import deepcopy
 import warnings
-
+from scipy.stats import ks_2samp
 
 #This script checks if a vector reaches equilibrium
 sigWrongArg="wrong number of arguments"
@@ -53,7 +53,7 @@ elif len(inXMLFileNames)%3==1:
 else:
     xmlFileToBeParsed=deepcopy(inXMLFileNames[2:])
 
-lastFileNum=8 if len(xmlFileToBeParsed)>12 else int(len(xmlFileToBeParsed)/3*2)
+lastFileNum=20 if len(xmlFileToBeParsed)>30 else int(len(xmlFileToBeParsed)/3*2)
 
 xmlFileToBeParsed=xmlFileToBeParsed[-lastFileNum:]
 
@@ -178,12 +178,13 @@ else:
     selectedFromPart0=part0[::lagVal]
     # print(len(selectedFromPart0))
     selectedFromPart1=part1[::lagVal]
-    mean0,hf0=Jackknife(part0)
-    mean1,hf1=Jackknife(part1)
-    print("mean0="+str(mean0)+", mean1="+str(mean1))
-    print("hf0="+str(hf0)+", hf1="+str(hf1))
-    if np.abs(mean0-mean1)<=hf0 or np.abs(mean0-mean1)<=hf1:
+    # mean0,hf0=Jackknife(part0)
+    # mean1,hf1=Jackknife(part1)
+    result = ks_2samp(selectedFromPart0, selectedFromPart1)
+    msg="K-S statistic: "+str(result.statistic)+"\n"+"P-value: "+str(result.pvalue)+"\n"
+    if result.pvalue>0.1:
         print(sigEq+" ,lag="+str(lagVal)+", fileNum="+str(lastFileNum))
+        print(msg)
         exit()
     else:
         print(sigContinue)

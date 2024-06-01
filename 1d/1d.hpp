@@ -82,7 +82,7 @@ class quadraticCubicAbs:public potentialFunction{
             gradVec(k)=3*std::pow(diff(k),2);
 
         }
-        return a*gradVec*arma::sign(diff)+a*2*diff;
+        return a*gradVec%arma::sign(diff)+a*2*diff;
     }
 
 };
@@ -175,7 +175,7 @@ class quarticCubicQudraticDiag: public potentialFunction{
 //            val+=10*std::pow(diffk,4)+std::pow(diffk,3)+3.5*std::pow(diffk,2);
 //        }
 //        return a*val;
-        arma::dcolvec vec=arma::pow(diff,2)+arma::pow(diff,3)+arma::pow(diff,4);
+        arma::dcolvec vec=arma::pow(diff,2)+arma::abs(arma::pow(diff,3))+arma::pow(diff,4);
         return a*arma::sum(vec);
 
     }
@@ -183,7 +183,7 @@ class quarticCubicQudraticDiag: public potentialFunction{
     arma::dcolvec grad(const arma::dcolvec& x, const arma::dcolvec & eqPositions)const override{
         arma::dcolvec diff=x-eqPositions;
 
-arma::dcolvec  gradVec=2*diff+3*arma::pow(diff,2)+4*arma::pow(diff,3);
+arma::dcolvec  gradVec=2*diff+3*arma::pow(diff,2)%arma::sign(diff)+4*arma::pow(diff,3);
         return a*gradVec;
 
     }

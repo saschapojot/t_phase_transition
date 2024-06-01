@@ -14,7 +14,7 @@ from datetime import datetime
 
 moveNumInOneFlush=3000
 
-pathData="./1ddata/"
+pathData="./1ddata/noGrad/"
 
 # funcNames=[]
 funcFileNames=[]
@@ -23,7 +23,7 @@ TFileNamesForAllFuncs=[]
 sortedTFilesForAllFuncs=[]
 sortedTValsForAllFuncs=[]
 
-for funcfile in glob.glob(pathData+"/funcpd*"):
+for funcfile in glob.glob(pathData+"/funcquarticCubicQudraticDiag*"):
     #first search a values
     funcFileNames.append(funcfile)
     # match_a=re.search(r"a(\d+(\.\d+)?)",a_file)
@@ -32,9 +32,12 @@ for funcfile in glob.glob(pathData+"/funcpd*"):
     TFilesTmp=[]
     TValsTmp=[]
     for TFile in glob.glob(funcfile+"/T*"):
+        matchT=re.search(r"T(\d+(\.\d+)?)",TFile)
+        if float(matchT.group(1))<2:
+            continue
         TFilesTmp.append(TFile)
         # print(TFile)
-        matchT=re.search(r"T(\d+(\.\d+)?)",TFile)
+
         TValsTmp.append(float(matchT.group(1)))
 
     TFileNamesForAllFuncs.append(TFilesTmp)
@@ -254,6 +257,22 @@ def meanAndVarForScalar(vec):
 
 
 outRoot=pathData
+def G(xArray):
+    """
+
+    :param xArray: each row is a data point of [x0,x1,...]
+    :return:
+    """
+    xArray=np.array(xArray)
+    Ex=np.mean(xArray,axis=0)
+    N=len(Ex)
+    Y=np.zeros((N,N),dtype=float)
+    Q,nCol=xArray.shape
+    for q in range(0,Q):
+        oneRow=xArray[q,:]
+        Y+=np.outer(oneRow,oneRow)
+    Y/=Q
+    return Y-np.outer(Ex,Ex)
 
 
 def diagnosticsAndStats(oneTFile):
@@ -281,7 +300,7 @@ def diagnosticsAndStats(oneTFile):
         varU=np.var(USelected,ddof=1)
         sigmaU=np.sqrt(varU)
         # print("varU="+str(varU))
-        hfIntervalU=1.96*np.sqrt(varU/len(USelected))
+        hfIntervalU=np.sqrt(varU)#1.96*np.sqrt(varU/len(USelected))
 
 
 
@@ -347,6 +366,10 @@ def diagnosticsAndStats(oneTFile):
 
     #diagnostics of x
     xVecVecSelected=xVecVecCombined[::lag,:]
+    matG=G(xVecVecSelected)
+    outGFile=oneTFile+"/"+"G.csv"
+    np.savetxt(outGFile,matG,delimiter=",")
+
     xValsForEachPosition=[]
     _,nColx=xVecVecSelected.shape
     for j in range(0,nColx):
@@ -357,13 +380,17 @@ def diagnosticsAndStats(oneTFile):
     fig.tight_layout(pad=5.0)
     x_vertical_distance = 0.9
     xTicks=list(np.arange(0,nColx))
+    xMeanAll=[]
+    xSdAll=[]
     for j in range(0,nColx):
         axx=fig.add_subplot(nColx,1,j+1,sharex=axx if j != 0 else None)
         xValsTmp=xValsForEachPosition[j]
         xMeanTmp=np.mean(xValsTmp)
+        xMeanAll.append(xMeanTmp)
         xVarTmp=np.var(xValsTmp,ddof=1)
         xSigmaTmp=np.sqrt(xVarTmp)
-        xHfInterval=1.96*np.sqrt(xVarTmp/len(xValsTmp))
+        xSdAll.append(xSigmaTmp)
+        xHfInterval=xSigmaTmp#1.96*np.sqrt(xVarTmp/len(xValsTmp))
         nbins=500
         (n,_,_)=axx.hist(xValsTmp,bins=nbins)
         xMeanTmp=np.round(xMeanTmp,4)
@@ -383,8 +410,16 @@ def diagnosticsAndStats(oneTFile):
     plt.savefig(oneTFile+"/"+xHistOut)
     plt.close()
 
+    plt.figure()
+    plt.scatter(xMeanAll,[0]*len(xMeanAll),color="blue",s=8)
+    for i in range(0,len(xMeanAll)):
+        plt.hlines(y=0,xmin=xMeanAll[i]-xSdAll[i],xmax=xMeanAll[i]+xSdAll[i],color="red",linewidth=2,alpha=0.2)
+        plt.text(xMeanAll[i],-0.1,str(np.round(xMeanAll[i],4)),color="blue", ha='center',fontsize=8)
 
 
+    gridOut="T"+str(TTmp)+"grid.pdf"
+    plt.title("T="+str(np.round(TTmp,4)))
+    plt.savefig(oneTFile+"/"+gridOut)
 
 
 
